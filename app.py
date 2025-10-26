@@ -1,40 +1,47 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS # Import CORS
-import time # To generate unique IDs
+from flask_cors import CORS
+import time
 
 app = Flask(__name__)
-CORS(app) # This enables Cross-Origin Resource Sharing
+CORS(app)
 
-# This is our temporary in-memory "database"
+# This is our in-memory "database"
 complaints = []
 
-@app.route('/api/complaints', methods=['POST'])
-def submit_complaint():
-    data = request.get_json()
+# MODIFIED: This function now handles GET and POST
+@app.route('/api/complaints', methods=['GET', 'POST'])
+def handle_complaints():
+    if request.method == 'POST':
+        # This is the code for submitting a new complaint
+        data = request.get_json()
+        grievance_id = f"G{int(time.time())}"
 
-    # Generate a unique grievance ID based on the current time
-    grievance_id = f"G{int(time.time())}"
+        new_complaint = {
+            "grievanceId": grievance_id,
+            "userName": data.get('userName'),
+            "userPhone": data.get('userPhone'),
+            "userEmail": data.get('userEmail'),
+            "userAddress": data.get('userAddress'),
+            "description": data.get('description'),
+            "category": data.get('category'),
+            "department": data.get('department'),
+            "subCategory": data.get('subCategory'),
+            "status": "Pending"
+        }
 
-    new_complaint = {
-        "grievanceId": grievance_id,
-        "userName": data.get('userName'),
-        "userPhone": data.get('userPhone'),
-        "userEmail": data.get('userEmail'),
-        "userAddress": data.get('userAddress'),
-        "description": data.get('description'),
-        "department": data.get('department'),
-        "category": data.get('category'),
-        "status": "Pending" # Default status
-    }
-
-    complaints.append(new_complaint)
-    print("--- New Complaint Received ---")
-    print(new_complaint)
-    
-    return jsonify({
-        "message": "Grievance successfully submitted!", 
-        "grievanceId": grievance_id
-    }), 201
+        complaints.append(new_complaint)
+        print("--- New Complaint Received ---")
+        print(new_complaint)
+        
+        return jsonify({
+            "message": "Grievance successfully submitted!", 
+            "grievanceId": grievance_id
+        }), 201
+    else:
+        # NEW: This is the code for getting all complaints
+        # This runs by default if the method is GET
+        print("--- All Complaints Requested ---")
+        return jsonify(complaints)
 
 @app.route('/api/complaints/track/<grievance_id>', methods=['GET'])
 def track_complaint(grievance_id):
